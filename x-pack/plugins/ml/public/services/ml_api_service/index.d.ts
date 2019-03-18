@@ -15,6 +15,10 @@ declare interface Ml {
     deleteAnnotation(id: string | undefined): Promise<any>;
     indexAnnotation(annotation: Annotation): Promise<object>;
   };
+  dataFrame: {
+    getDataFrameTransformsPreview(payload: any): Promise<any>;
+  };
+  esSearch: any;
 }
 
 declare const ml: Ml;
