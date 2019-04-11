@@ -16,9 +16,11 @@ declare interface Ml {
     indexAnnotation(annotation: Annotation): Promise<object>;
   };
   dataFrame: {
+    getDataFrameTransforms(): Promise<any>;
     createDataFrameTransformsJob(jobId: string, jobConfig: any): Promise<any>;
     getDataFrameTransformsPreview(payload: any): Promise<any>;
     startDataFrameTransformsJob(jobId: string): Promise<any>;
+    stopDataFrameTransformsJob(jobId: string): Promise<any>;
   };
   esSearch: any;
 }
