@@ -7,6 +7,9 @@
 import React, { Fragment, FC, useEffect, useState } from 'react';
 import moment from 'moment-timezone';
 
+import vega from 'vega';
+import vegaEmbed from 'vega-embed';
+
 import { i18n } from '@kbn/i18n';
 import {
   EuiBadge,
@@ -400,6 +403,39 @@ export const ResultsTable: FC<Props> = React.memo(
         ? errorMessage
         : searchError;
 
+    const vegaColumns = selectedFields
+      .map(sf => sf.id)
+      .filter(sf => sf !== dependentVariable && sf.includes('ml.') === false);
+
+    const vegaSpec = {
+      config: { view: { continuousWidth: 400, continuousHeight: 300 } },
+      repeat: {
+        column: vegaColumns,
+        row: [dependentVariable],
+      },
+      spec: {
+        mark: { type: 'point', filled: true, opacity: 0.5, size: 5 },
+        encoding: {
+          x: { type: 'quantitative', field: { repeat: 'column' } },
+          y: { type: 'quantitative', field: { repeat: 'row' } },
+        },
+        height: 100,
+        width: 100,
+      },
+      data: { name: 'data-b9ad66ca81fa5940d16e1db3596f6e24' },
+      $schema: 'https://vega.github.io/schema/vega-lite/v2.6.0.json',
+      datasets: {
+        'data-b9ad66ca81fa5940d16e1db3596f6e24': tableItems,
+      },
+    };
+
+    const vegaID = 'ml-vega-vis';
+    const vegaEl = document.getElementById(vegaID);
+
+    if (columns.length > 0 && tableItems.length > 0) {
+      vegaEmbed('#ml-vega-vis', vegaSpec);
+    }
+
     return (
       <EuiPanel grow={false} data-test-subj="mlDFAnalyticsRegressionExplorationTablePanel">
         <EuiFlexGroup alignItems="center" justifyContent="spaceBetween" responsive={false}>
@@ -490,6 +526,8 @@ export const ResultsTable: FC<Props> = React.memo(
               <Fragment />
             </EuiFormRow>
 
+            <EuiSpacer />
+            <div id={vegaID} />
             <EuiSpacer />
             <MlInMemoryTableBasic
               allowNeutralSort={false}

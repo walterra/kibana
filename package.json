@@ -274,6 +274,8 @@
     "uuid": "3.3.2",
     "val-loader": "^1.1.1",
     "validate-npm-package-name": "2.2.2",
+    "vega": "^5.9.1",
+    "vega-embed": "^6.2.2",
     "vega-lib": "4.3.0",
     "vega-lite": "^2.6.0",
     "vega-schema-url-parser": "1.0.0",

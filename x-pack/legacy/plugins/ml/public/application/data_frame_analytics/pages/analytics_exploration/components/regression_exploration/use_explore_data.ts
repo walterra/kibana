@@ -125,7 +125,7 @@ export const useExploreData = (
 
         const resp: SearchResponse<any> = await ml.esSearch({
           index: jobConfig.dest.index,
-          size: SEARCH_SIZE,
+          size: 10000, // SEARCH_SIZE,
           body,
         });
 
