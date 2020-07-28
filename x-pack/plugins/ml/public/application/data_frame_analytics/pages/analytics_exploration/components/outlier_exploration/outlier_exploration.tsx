@@ -36,6 +36,7 @@ import { ExplorationTitle } from '../exploration_title';
 import { IndexPatternPrompt } from '../index_pattern_prompt';
 
 import { getFeatureCount } from './common';
+import { ScatterplotMatrix } from './scatterplot_matrix';
 import { useOutlierData } from './use_outlier_data';
 
 export type TableItem = Record<string, any>;
@@ -123,11 +124,14 @@ export const OutlierExploration: FC<ExplorationProps> = React.memo(({ jobId }) =
             </EuiFlexGroup>
             <EuiSpacer size="s" />
             {columnsWithCharts.length > 0 && tableItems.length > 0 && (
-              <DataGrid
-                {...outlierData}
-                dataTestSubj="mlExplorationDataGrid"
-                toastNotifications={getToastNotifications()}
-              />
+              <>
+                <ScatterplotMatrix {...outlierData} />
+                <DataGrid
+                  {...outlierData}
+                  dataTestSubj="mlExplorationDataGrid"
+                  toastNotifications={getToastNotifications()}
+                />
+              </>
             )}
           </>
         )}
