@@ -8,16 +8,7 @@ import React, { useEffect, useState, FC } from 'react';
 
 import { i18n } from '@kbn/i18n';
 
-import {
-  EuiAccordion,
-  EuiCallOut,
-  EuiHorizontalRule,
-  EuiPanel,
-  EuiSpacer,
-  EuiStat,
-  EuiText,
-  EuiTitle,
-} from '@elastic/eui';
+import { EuiCallOut, EuiPanel, EuiSpacer, EuiStat, EuiTabbedContent } from '@elastic/eui';
 
 import './outlier_exploration.scss';
 
@@ -60,8 +51,6 @@ export type TableItem = Record<string, any>;
 interface ExplorationProps {
   jobId: string;
 }
-
-const ACCORDION_PADDING_SIZE = 's';
 
 export const OutlierExploration: FC<ExplorationProps> = React.memo(({ jobId }) => {
   const explorationTitle = i18n.translate('xpack.ml.dataframe.analytics.exploration.jobIdTitle', {
@@ -133,6 +122,74 @@ export const OutlierExploration: FC<ExplorationProps> = React.memo(({ jobId }) =
     );
   }
 
+  const tabs = [
+    {
+      id: 'analytics-stats',
+      name: 'Analysis information',
+      content: (
+        <>
+          {(columnsWithCharts.length > 0 || searchQuery !== defaultSearchQuery) &&
+            indexPattern !== undefined &&
+            jobConfig !== undefined &&
+            columnsWithCharts.length > 0 &&
+            tableItems.length > 0 &&
+            expandedRowItem !== undefined && <ExpandedRow item={expandedRowItem} />}
+        </>
+      ),
+    },
+    {
+      id: 'data-grid',
+      name: 'Results table',
+      content: (
+        <>
+          <EuiPanel data-test-subj="mlDFAnalyticsOutlierExplorationTablePanel">
+            {jobConfig !== undefined && needsDestIndexPattern && (
+              <IndexPatternPrompt destIndex={jobConfig.dest.index} />
+            )}
+            {(columnsWithCharts.length > 0 || searchQuery !== defaultSearchQuery) &&
+              indexPattern !== undefined && (
+                <>
+                  <ColorRangeLegend
+                    colorRange={colorRange}
+                    title={i18n.translate(
+                      'xpack.ml.dataframe.analytics.exploration.colorRangeLegendTitle',
+                      {
+                        defaultMessage: 'Feature influence score',
+                      }
+                    )}
+                  />
+                  <EuiSpacer size="s" />
+                  {columnsWithCharts.length > 0 && tableItems.length > 0 && (
+                    <DataGrid
+                      {...outlierData}
+                      dataTestSubj="mlExplorationDataGrid"
+                      toastNotifications={getToastNotifications()}
+                    />
+                  )}
+                </>
+              )}
+          </EuiPanel>
+        </>
+      ),
+    },
+    {
+      id: 'scatterplot-matrix',
+      name: 'Scatterplot matrix',
+      content: (
+        <>
+          {(columnsWithCharts.length > 0 || searchQuery !== defaultSearchQuery) &&
+            indexPattern !== undefined &&
+            columnsWithCharts.length > 0 &&
+            tableItems.length > 0 && (
+              <EuiPanel data-test-subj="mlDFAnalyticsOutlierExplorationScatterplotMatrixPanel">
+                <ScatterplotMatrix {...outlierData} />
+              </EuiPanel>
+            )}
+        </>
+      ),
+    },
+  ];
+
   return (
     <>
       {(columnsWithCharts.length > 0 || searchQuery !== defaultSearchQuery) &&
@@ -170,98 +227,14 @@ export const OutlierExploration: FC<ExplorationProps> = React.memo(({ jobId }) =
           </>
         )}
 
-      <EuiAccordion
-        id="mlDFAnalyticsOutlierExplorationStatsAccordion"
-        buttonContent={
-          <>
-            <EuiTitle size="s">
-              <h5>Analysis information</h5>
-            </EuiTitle>
-            <EuiText color="subdued" size="s">
-              Data counts, memory usage, outlier detection stats
-            </EuiText>
-          </>
-        }
-        paddingSize={ACCORDION_PADDING_SIZE}
-      >
-        {(columnsWithCharts.length > 0 || searchQuery !== defaultSearchQuery) &&
-          indexPattern !== undefined &&
-          jobConfig !== undefined &&
-          columnsWithCharts.length > 0 &&
-          tableItems.length > 0 &&
-          expandedRowItem !== undefined && <ExpandedRow item={expandedRowItem} />}
-      </EuiAccordion>
-      <EuiHorizontalRule size="full" margin="xs" />
-
-      <EuiAccordion
-        id="mlDFAnalyticsOutlierExplorationScatterplotMatrixAccordion"
-        buttonContent={
-          <>
-            <EuiTitle size="s">
-              <h5>Scatterplot matrix</h5>
-            </EuiTitle>
-            <EuiText color="subdued" size="s">
-              Explore relationships between analysis fields
-            </EuiText>
-          </>
-        }
-        paddingSize={ACCORDION_PADDING_SIZE}
-      >
-        {(columnsWithCharts.length > 0 || searchQuery !== defaultSearchQuery) &&
-          indexPattern !== undefined &&
-          columnsWithCharts.length > 0 &&
-          tableItems.length > 0 && (
-            <EuiPanel data-test-subj="mlDFAnalyticsOutlierExplorationScatterplotMatrixPanel">
-              <ScatterplotMatrix {...outlierData} />
-            </EuiPanel>
-          )}
-      </EuiAccordion>
-      <EuiHorizontalRule size="full" margin="xs" />
-
-      <EuiAccordion
-        id="mlDFAnalyticsOutlierExplorationTableAccordion"
-        buttonContent={
-          <>
-            <EuiTitle size="s">
-              <h5>Results table</h5>
-            </EuiTitle>
-            <EuiText color="subdued" size="s">
-              Color-coded by outlier score
-            </EuiText>
-          </>
-        }
-        paddingSize={ACCORDION_PADDING_SIZE}
-        initialIsOpen={true}
-      >
-        <EuiPanel data-test-subj="mlDFAnalyticsOutlierExplorationTablePanel">
-          {jobConfig !== undefined && needsDestIndexPattern && (
-            <IndexPatternPrompt destIndex={jobConfig.dest.index} />
-          )}
-          {(columnsWithCharts.length > 0 || searchQuery !== defaultSearchQuery) &&
-            indexPattern !== undefined && (
-              <>
-                <ColorRangeLegend
-                  colorRange={colorRange}
-                  title={i18n.translate(
-                    'xpack.ml.dataframe.analytics.exploration.colorRangeLegendTitle',
-                    {
-                      defaultMessage: 'Feature influence score',
-                    }
-                  )}
-                />
-                <EuiSpacer size="s" />
-                {columnsWithCharts.length > 0 && tableItems.length > 0 && (
-                  <DataGrid
-                    {...outlierData}
-                    dataTestSubj="mlExplorationDataGrid"
-                    toastNotifications={getToastNotifications()}
-                  />
-                )}
-              </>
-            )}
-        </EuiPanel>
-      </EuiAccordion>
-      <EuiHorizontalRule size="full" margin="xs" />
+      <EuiTabbedContent
+        tabs={tabs}
+        initialSelectedTab={tabs[1]}
+        autoFocus="selected"
+        onTabClick={(tab) => {
+          // console.log('clicked tab', tab);
+        }}
+      />
     </>
   );
 });

@@ -10,7 +10,7 @@
     "encoding": {
       "color": {
         "condition": {
-          "value": "red",
+          "value": "#006BB4",
           "test": "(datum['ml.outlier_score'] >= SelectorName.cutoff)"
         },
         "value": "gray"
