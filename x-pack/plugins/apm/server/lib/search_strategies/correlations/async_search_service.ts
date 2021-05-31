@@ -6,6 +6,7 @@
  */
 
 import { shuffle } from 'lodash';
+import kmeans from 'ml-kmeans';
 
 import type { ElasticsearchClient } from 'src/core/server';
 
@@ -16,6 +17,9 @@ import { fetchTransactionDurationPecentiles } from './query_percentiles';
 import { fetchTransactionDurationCorrelation } from './query_correlation';
 import { fetchTransactionDurationHistogramRangesteps } from './query_histogram_rangesteps';
 import { fetchTransactionDurationRanges } from './query_ranges';
+import { silhouetteCoefficient } from './silhouette_coefficient';
+
+const CORRELATION_THRESHOLD = 0.0;
 
 export interface SearchServiceParams {
   index: string;
@@ -35,6 +39,7 @@ export interface SearchServiceValue {
   value: string;
   field: string;
   correlation: number;
+  cluster?: number;
 }
 
 export interface AsyncSearchProviderProgress {
@@ -146,14 +151,6 @@ export const asyncSearchServiceProvider = (
             return;
           }
 
-          const logHistogram = await fetchTransactionDurationRanges(
-            esClient,
-            params,
-            histogramRangeSteps,
-            item.field,
-            item.value
-          );
-
           const { correlation } = await fetchTransactionDurationCorrelation(
             esClient,
             params,
@@ -168,33 +165,48 @@ export const asyncSearchServiceProvider = (
             return;
           }
 
-          const fullHistogram = overallLogHistogramChartData.map((h) => {
-            const histogramItem = logHistogram.find((di) => di.key === h.key);
-            const docCount =
-              item !== undefined && histogramItem !== undefined
-                ? histogramItem.doc_count
-                : 0;
-            return {
-              key: h.key,
-              doc_count_full: h.doc_count,
-              doc_count: docCount,
-            };
-          });
+          if (correlation > CORRELATION_THRESHOLD) {
+            const logHistogram = await fetchTransactionDurationRanges(
+              esClient,
+              params,
+              histogramRangeSteps,
+              item.field,
+              item.value
+            );
 
-          yield {
-            ...item,
-            correlation,
-            histogram: fullHistogram,
-          };
+            const fullHistogram = overallLogHistogramChartData.map((h) => {
+              const histogramItem = logHistogram.find((di) => di.key === h.key);
+              const docCount =
+                item !== undefined && histogramItem !== undefined
+                  ? histogramItem.doc_count
+                  : 0;
+              return {
+                key: h.key,
+                doc_count_full: h.doc_count,
+                doc_count: docCount,
+              };
+            });
+
+            yield {
+              ...item,
+              correlation,
+              histogram: fullHistogram,
+            };
+          } else {
+            // still yield if we want to skip an item so progress calculation is valid.
+            yield undefined;
+          }
         }
       }
 
       let loadedHistograms = 0;
       for await (const item of fetchTransactionDurationHistograms()) {
-        values.push(item);
-        values = values
-          .sort((a, b) => b.correlation - a.correlation)
-          .slice(0, 15);
+        if (item !== undefined) {
+          values.push(item);
+          values = values
+            .sort((a, b) => b.correlation - a.correlation)
+            .slice(0, 100);
+        }
         loadedHistograms++;
         progress.loadedHistograms = loadedHistograms / fieldValuePairs.length;
       }
@@ -208,13 +220,55 @@ export const asyncSearchServiceProvider = (
   fetchCorrelations();
 
   return () => {
+    let returnValues = values;
+    const clusterData = values.map((v) => v.histogram.map((h) => h.doc_count));
+
+    let bestClustering: number[] = [];
+    let bestSilhouetteScore = 0;
+    let bestK = 0;
+
+    for (let k = 2; k < clusterData.length; k++) {
+      if (clusterData.length > k) {
+        const kmeansResults = kmeans(clusterData, k);
+        const silhouetteScore = silhouetteCoefficient(
+          clusterData,
+          kmeansResults.clusters
+        );
+        if (silhouetteScore > bestSilhouetteScore) {
+          bestClustering = kmeansResults.clusters;
+          bestSilhouetteScore = silhouetteScore;
+          bestK = k;
+        }
+      }
+    }
+
+    // if clustering returned results, only return the first of each cluster
+    if (bestClustering.length > 0) {
+      returnValues = returnValues.map((v, i) => {
+        v.cluster = bestClustering[i];
+        return v;
+      });
+
+      const filteredValues: SearchServiceValue[] = [];
+      const pushedClusters: number[] = [];
+
+      for (const v of returnValues) {
+        if (v.cluster !== undefined && !pushedClusters.includes(v.cluster)) {
+          pushedClusters.push(v.cluster);
+          filteredValues.push(v);
+        }
+      }
+
+      returnValues = filteredValues;
+    }
+
     return {
       error,
       isRunning,
       loaded: Math.floor(progress.getOverallProgress() * 100),
       started: progress.started,
       total: 100,
-      values,
+      values: returnValues,
       percentileThresholdValue,
       cancel,
     };
