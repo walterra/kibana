@@ -236,7 +236,7 @@ export function MlLatencyCorrelations({ onClose }: Props) {
               'xpack.apm.correlations.latencyCorrelations.correlationsTable.correlationColumnDescription',
               {
                 defaultMessage:
-                  'A score between -1 and 1 for the relative impact on latency.',
+                  'The impact of a field on the latency of the service, ranging from 0 to 1.',
               }
             )}
           >
