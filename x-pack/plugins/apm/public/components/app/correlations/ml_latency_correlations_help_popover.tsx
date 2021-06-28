@@ -15,7 +15,7 @@ export function LatencyCorrelationsHelpPopover() {
 
   return (
     <HelpPopover
-      anchorPosition="upCenter"
+      anchorPosition="leftUp"
       button={
         <HelpPopoverButton
           onClick={() => {

@@ -264,22 +264,7 @@ export function MlLatencyCorrelations({ onClose }: Props) {
 
   return (
     <>
-      <EuiText size="s" color="subdued">
-        <p>
-          {i18n.translate(
-            'xpack.apm.correlations.latencyCorrelations.description',
-            {
-              defaultMessage:
-                'What is slowing down my service? Correlations will help discover a slower performance in a particular cohort of your data.',
-            }
-          )}
-        </p>
-      </EuiText>
-      <EuiFlexItem grow={false}>
-        <LatencyCorrelationsHelpPopover />
-      </EuiFlexItem>
       <EuiSpacer size="m" />
-
       <EuiFlexGroup>
         <EuiFlexItem grow={false}>
           {!isRunning && (
@@ -322,6 +307,9 @@ export function MlLatencyCorrelations({ onClose }: Props) {
               />
             </EuiFlexItem>
           </EuiFlexGroup>
+        </EuiFlexItem>
+        <EuiFlexItem grow={false}>
+          <LatencyCorrelationsHelpPopover />
         </EuiFlexItem>
       </EuiFlexGroup>
 

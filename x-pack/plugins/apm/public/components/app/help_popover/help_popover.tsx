@@ -26,6 +26,7 @@ export function HelpPopoverButton({
       className="apmHelpPopover__buttonIcon"
       size="s"
       iconType="help"
+      aria-label="Help"
       onClick={onClick}
     />
   );
