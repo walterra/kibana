@@ -36,6 +36,7 @@ import { useCorrelations } from './use_correlations';
 import { push } from '../../shared/Links/url_helpers';
 import { useUiTracker } from '../../../../../observability/public';
 import { asPreciseDecimal } from '../../../../common/utils/formatters';
+import { LatencyCorrelationsHelpPopover } from './ml_latency_correlations_help_popover';
 
 const DEFAULT_PERCENTILE_THRESHOLD = 95;
 const isErrorMessage = (arg: unknown): arg is Error => {
@@ -274,7 +275,9 @@ export function MlLatencyCorrelations({ onClose }: Props) {
           )}
         </p>
       </EuiText>
-
+      <EuiFlexItem grow={false}>
+        <LatencyCorrelationsHelpPopover />
+      </EuiFlexItem>
       <EuiSpacer size="m" />
 
       <EuiFlexGroup>
