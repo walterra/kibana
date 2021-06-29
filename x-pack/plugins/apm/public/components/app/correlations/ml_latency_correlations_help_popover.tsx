@@ -38,13 +38,13 @@ export function LatencyCorrelationsHelpPopover() {
       <p>
         <FormattedMessage
           id="xpack.apm.correlations.latencyPopoverChartExplanation"
-          defaultMessage="The latency distribution chart visualizes the overall latency of the service and the attributes that are most likely responsible for slow transactions. You can view the impact of other attributes by selecting them in the table."
+          defaultMessage="The latency distribution chart visualizes the overall latency of the service. When you hover over attributes in the table, their latency distribution is added to the chart."
         />
       </p>
       <p>
         <FormattedMessage
           id="xpack.apm.correlations.latencyPopoverTableExplanation"
-          defaultMessage="The table is sorted by correlation values, which are derived by using a combination of Pearson correlation coefficient (PCC) and Kolmogorov–Smirnov (K-S) tests and range from 0 to 1. Attributes with a high correlation are likely to contribute to increased latency."
+          defaultMessage="The table is sorted by correlation values, which are Pearson correlation coefficients (PCC) that range from 0 to 1. A Kolmogorov–Smirnov (K-S) test is used to verify that the impact is statistically significant. Attributes with a high correlation are likely to contribute to increased latency."
         />
       </p>
       <p>
