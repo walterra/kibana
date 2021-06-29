@@ -35,6 +35,24 @@ export function LatencyCorrelationsHelpPopover() {
           defaultMessage="Correlations help you discover which fields are contributing to increased service response times or latency."
         />
       </p>
+      <p>
+        <FormattedMessage
+          id="xpack.apm.correlations.latencyPopoverChartExplanation"
+          defaultMessage="The latency distribution chart visualizes the overall latency of the service and the attributes that are most likely responsible for slow transactions. You can view the impact of other attributes by selecting them in the table."
+        />
+      </p>
+      <p>
+        <FormattedMessage
+          id="xpack.apm.correlations.latencyPopoverTableExplanation"
+          defaultMessage="The table is sorted by correlation values, which are derived by using a combination of Pearson correlation coefficient (PCC) and Kolmogorov–Smirnov (K-S) tests and range from 0 to 1. Attributes with a high correlation are likely to contribute to increased latency."
+        />
+      </p>
+      <p>
+        <FormattedMessage
+          id="xpack.apm.correlations.latencyPopoverFilterExplanation"
+          defaultMessage="You can also add or remove filters to affect the queries in the APM app."
+        />
+      </p>
     </HelpPopover>
   );
 }
