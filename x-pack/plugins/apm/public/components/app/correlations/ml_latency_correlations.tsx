@@ -45,11 +45,9 @@ import {
 import { asPreciseDecimal } from '../../../../common/utils/formatters';
 import { useApmServiceContext } from '../../../context/apm_service/use_apm_service_context';
 import { LatencyCorrelationsHelpPopover } from './ml_latency_correlations_help_popover';
+import { isErrorMessage } from './utils/is_error_message';
 
 const DEFAULT_PERCENTILE_THRESHOLD = 95;
-const isErrorMessage = (arg: unknown): arg is Error => {
-  return arg instanceof Error;
-};
 
 interface Props {
   onClose: () => void;

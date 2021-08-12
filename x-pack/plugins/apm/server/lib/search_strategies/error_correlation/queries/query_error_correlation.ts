@@ -71,6 +71,7 @@ export const fetchFailedTransactionsCorrelationPValues = async (
     bg_count: number;
     score: number;
     p_value: number | null;
+    normalized_score: number | null;
   }>
 > => {
   const resp = await esClient.search(
@@ -89,11 +90,20 @@ export const fetchFailedTransactionsCorrelationPValues = async (
     doc_count: number;
     bg_count: number;
     score: number;
-  }>).buckets.map((b) => ({
-    ...b,
-    fieldName,
-    p_value: Math.exp(-b.score),
-  }));
+  }>).buckets.map((b) => {
+    const score = b.score;
+    const normalizedScore =
+      0.5 * Math.min(Math.max((score - 3.912) / 2.995, 0), 1) +
+      0.25 * Math.min(Math.max((score - 6.908) / 6.908, 0), 1) +
+      0.25 * Math.min(Math.max((score - 13.816) / 101.314, 0), 1);
+
+    return {
+      ...b,
+      fieldName,
+      p_value: Math.exp(-score),
+      normalized_score: normalizedScore,
+    };
+  });
 
   return result;
 };

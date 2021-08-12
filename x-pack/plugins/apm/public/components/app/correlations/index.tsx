@@ -49,17 +49,17 @@ import {
   TRANSACTION_NAME,
 } from '../../../../common/elasticsearch_fieldnames';
 import { useApmServiceContext } from '../../../context/apm_service/use_apm_service_context';
-import { MlErrorCorrelations } from './ml_error_correlations';
+import { MlFailedTransactionsCorrelations } from './ml_error_correlations';
 
 const failedTransactionsTab = {
   key: 'failedTransactions',
   label: i18n.translate(
-    'xpack.apm.correlations.tabs.failingTransactionsLabel',
+    'xpack.apm.correlations.tabs.failedTransactionssLabel',
     {
-      defaultMessage: 'Failing transactions',
+      defaultMessage: 'Failed transactions',
     }
   ),
-  component: MlErrorCorrelations,
+  component: MlFailedTransactionsCorrelations,
 };
 const latencyCorrelationsTab = {
   key: 'latencyCorrelations',
