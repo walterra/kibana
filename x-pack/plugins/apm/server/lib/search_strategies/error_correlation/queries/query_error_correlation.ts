@@ -64,16 +64,7 @@ export const fetchFailedTransactionsCorrelationPValues = async (
   esClient: ElasticsearchClient,
   params: SearchServiceFetchParams,
   fieldName: string
-): Promise<
-  Array<{
-    key: string;
-    doc_count: number;
-    bg_count: number;
-    score: number;
-    p_value: number | null;
-    normalized_score: number | null;
-  }>
-> => {
+) => {
   const resp = await esClient.search(
     getErrorCorrelationRequest(params, fieldName)
   );
@@ -100,6 +91,7 @@ export const fetchFailedTransactionsCorrelationPValues = async (
     return {
       ...b,
       fieldName,
+      fieldValue: b.key,
       p_value: Math.exp(-score),
       normalized_score: normalizedScore,
     };

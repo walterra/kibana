@@ -18,6 +18,7 @@ import {
   EuiProgress,
   EuiSpacer,
   EuiText,
+  EuiBadge,
 } from '@elastic/eui';
 import { i18n } from '@kbn/i18n';
 import { FormattedMessage } from '@kbn/i18n/react';
@@ -226,10 +227,10 @@ export function MlFailedTransactionsCorrelations({ onClose }: Props) {
         </EuiFlexItem>
         <EuiFlexItem>
           <EuiFlexGroup direction="column" gutterSize="none">
-            <EuiFlexItem data-test-subj="apmCorrelationsfailedTransactionssCorrelationsProgressTitle">
+            <EuiFlexItem data-test-subj="apmCorrelationsfailedTransactionsCorrelationsProgressTitle">
               <EuiText size="xs" color="subdued">
                 <FormattedMessage
-                  data-test-subj="apmCorrelationsfailedTransactionssCorrelationsProgressTitle"
+                  data-test-subj="apmCorrelationsfailedTransactionsCorrelationsProgressTitle"
                   id="xpack.apm.correlations.failedTransactions.progressTitle"
                   defaultMessage="Progress: {progress}%"
                   values={{ progress: Math.round(progress * 100) }}
@@ -257,10 +258,12 @@ export function MlFailedTransactionsCorrelations({ onClose }: Props) {
         <>
           <Summary
             items={[
-              `${selectedTerm.fieldName}: ${selectedTerm.key}`,
-              `${
-                selectedTerm.p_value < 0.0001
-                  ? '<.0001'
+              <EuiBadge color="hollow">
+                {`${selectedTerm.fieldName}: ${selectedTerm.key}`}
+              </EuiBadge>,
+              `p-value: ${
+                selectedTerm.p_value !== null && selectedTerm.p_value < 0.00001
+                  ? '<.00001'
                   : asPreciseDecimal(selectedTerm.p_value, 4)
               }`,
             ]}
@@ -268,13 +271,11 @@ export function MlFailedTransactionsCorrelations({ onClose }: Props) {
           <EuiSpacer size="m" />
         </>
       ) : null}
-      <CorrelationsTable
-        // @ts-ignore correlations don't have the same column format other tables have
+      <CorrelationsTable<ErrorCorrelationValue>
         columns={errorCorrelationsColumns}
-        // @ts-expect-error correlations don't have the same significant term other tables have
         significantTerms={result?.response?.values}
         status={FETCH_STATUS.SUCCESS}
-        setSelectedSignificantTerm={setSelectedSignificantTerm}
+        setSelectedTerm={setSelectedSignificantTerm}
         selectedTerm={selectedTerm}
         onFilter={onClose}
       />
