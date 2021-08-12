@@ -24,7 +24,6 @@ import {
 } from '@elastic/eui';
 import { i18n } from '@kbn/i18n';
 import { useHistory } from 'react-router-dom';
-import { MlLatencyCorrelations } from './ml_latency_correlations';
 import { useUrlParams } from '../../../context/url_params_context/use_url_params';
 import { createHref } from '../../shared/Links/url_helpers';
 import {
@@ -53,22 +52,12 @@ import { MlFailedTransactionsCorrelations } from './ml_error_correlations';
 
 const failedTransactionsTab = {
   key: 'failedTransactions',
-  label: i18n.translate(
-    'xpack.apm.correlations.tabs.failedTransactionssLabel',
-    {
-      defaultMessage: 'Failed transactions',
-    }
-  ),
+  label: i18n.translate('xpack.apm.correlations.tabs.failedTransactionsLabel', {
+    defaultMessage: 'Failed transactions',
+  }),
   component: MlFailedTransactionsCorrelations,
 };
-const latencyCorrelationsTab = {
-  key: 'latencyCorrelations',
-  label: i18n.translate('xpack.apm.correlations.tabs.latencyLabel', {
-    defaultMessage: 'Latency',
-  }),
-  component: MlLatencyCorrelations,
-};
-const tabs = [latencyCorrelationsTab, failedTransactionsTab];
+const tabs = [failedTransactionsTab];
 
 export function Correlations() {
   const license = useLicenseContext();
@@ -78,9 +67,9 @@ export function Correlations() {
 
   const history = useHistory();
   const [isFlyoutVisible, setIsFlyoutVisible] = useState(false);
-  const [currentTab, setCurrentTab] = useState(latencyCorrelationsTab.key);
+  const [currentTab, setCurrentTab] = useState(failedTransactionsTab.key);
   const { component: TabContent } =
-    tabs.find((tab) => tab.key === currentTab) ?? latencyCorrelationsTab;
+    tabs.find((tab) => tab.key === currentTab) ?? failedTransactionsTab;
   const metric = {
     app: 'apm' as const,
     metric: hasActivePlatinumLicense

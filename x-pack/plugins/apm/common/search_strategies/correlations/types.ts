@@ -52,3 +52,8 @@ export interface AsyncSearchProviderProgress {
   loadedFieldValuePairs: number;
   loadedHistograms: number;
 }
+
+export interface SignificantCorrelationTerm {
+  fieldName: string;
+  fieldValue: string;
+}

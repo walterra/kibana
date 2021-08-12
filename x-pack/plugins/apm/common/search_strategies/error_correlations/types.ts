@@ -6,8 +6,9 @@
  */
 
 import { FAILED_TRANSACTION_CORRELATION_IMPACT } from './constants';
+import type { SignificantCorrelationTerm } from '../correlations/types';
 
-export interface ErrorCorrelationValue {
+export interface ErrorCorrelationValue extends SignificantCorrelationTerm {
   key: string;
   doc_count: number;
   bg_count: number;

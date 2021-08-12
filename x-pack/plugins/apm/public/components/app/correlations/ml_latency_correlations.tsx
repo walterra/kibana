@@ -6,7 +6,6 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { useHistory } from 'react-router-dom';
 import {
   EuiCallOut,
   EuiCode,
@@ -32,16 +31,9 @@ import {
   CorrelationsChart,
   replaceHistogramDotsWithBars,
 } from './correlations_chart';
-import {
-  CorrelationsTable,
-  SelectedSignificantTerm,
-} from './correlations_table';
+import { CorrelationsTable } from './correlations_table';
 import { useCorrelations } from './use_correlations';
-import { push } from '../../shared/Links/url_helpers';
-import {
-  enableInspectEsQueries,
-  useUiTracker,
-} from '../../../../../observability/public';
+import { enableInspectEsQueries } from '../../../../../observability/public';
 import { asPreciseDecimal } from '../../../../common/utils/formatters';
 import { useApmServiceContext } from '../../../context/apm_service/use_apm_service_context';
 import { LatencyCorrelationsHelpPopover } from './ml_latency_correlations_help_popover';
@@ -132,7 +124,7 @@ export function MlLatencyCorrelations({ onClose }: Props) {
   const [
     selectedSignificantTerm,
     setSelectedSignificantTerm,
-  ] = useState<SelectedSignificantTerm | null>(null);
+  ] = useState<MlCorrelationsTerms | null>(null);
 
   let selectedHistogram = histograms.length > 0 ? histograms[0] : undefined;
 
@@ -143,8 +135,6 @@ export function MlLatencyCorrelations({ onClose }: Props) {
         h.value === selectedSignificantTerm.fieldValue
     );
   }
-  const history = useHistory();
-  const trackApmEvent = useUiTracker({ app: 'apm' });
 
   const mlCorrelationColumns: Array<
     EuiBasicTableColumn<MlCorrelationsTerms>
@@ -198,63 +188,8 @@ export function MlLatencyCorrelations({ onClose }: Props) {
         ),
         render: (fieldValue: string) => String(fieldValue).slice(0, 50),
       },
-      {
-        width: '100px',
-        actions: [
-          {
-            name: i18n.translate(
-              'xpack.apm.correlations.latencyCorrelations.correlationsTable.filterLabel',
-              { defaultMessage: 'Filter' }
-            ),
-            description: i18n.translate(
-              'xpack.apm.correlations.latencyCorrelations.correlationsTable.filterDescription',
-              { defaultMessage: 'Filter by value' }
-            ),
-            icon: 'plusInCircle',
-            type: 'icon',
-            onClick: (term: MlCorrelationsTerms) => {
-              push(history, {
-                query: {
-                  kuery: `${term.fieldName}:"${encodeURIComponent(
-                    term.fieldValue
-                  )}"`,
-                },
-              });
-              onClose();
-              trackApmEvent({ metric: 'correlations_term_include_filter' });
-            },
-          },
-          {
-            name: i18n.translate(
-              'xpack.apm.correlations.latencyCorrelations.correlationsTable.excludeLabel',
-              { defaultMessage: 'Exclude' }
-            ),
-            description: i18n.translate(
-              'xpack.apm.correlations.latencyCorrelations.correlationsTable.excludeDescription',
-              { defaultMessage: 'Filter out value' }
-            ),
-            icon: 'minusInCircle',
-            type: 'icon',
-            onClick: (term: MlCorrelationsTerms) => {
-              push(history, {
-                query: {
-                  kuery: `not ${term.fieldName}:"${encodeURIComponent(
-                    term.fieldValue
-                  )}"`,
-                },
-              });
-              onClose();
-              trackApmEvent({ metric: 'correlations_term_exclude_filter' });
-            },
-          },
-        ],
-        name: i18n.translate(
-          'xpack.apm.correlations.latencyCorrelations.correlationsTable.actionsLabel',
-          { defaultMessage: 'Filter' }
-        ),
-      },
     ],
-    [history, onClose, trackApmEvent]
+    []
   );
 
   const histogramTerms: MlCorrelationsTerms[] = useMemo(() => {
@@ -375,13 +310,11 @@ export function MlLatencyCorrelations({ onClose }: Props) {
 
       <div data-test-subj="apmCorrelationsTable">
         {histograms.length > 0 && selectedHistogram !== undefined && (
-          <CorrelationsTable
-            // @ts-ignore correlations don't have the same column format other tables have
+          <CorrelationsTable<MlCorrelationsTerms>
             columns={mlCorrelationColumns}
-            // @ts-expect-error correlations don't have the same significant term other tables have
             significantTerms={histogramTerms}
             status={FETCH_STATUS.SUCCESS}
-            setSelectedSignificantTerm={setSelectedSignificantTerm}
+            setSelectedTerm={setSelectedSignificantTerm}
             selectedTerm={{
               fieldName: selectedHistogram.field,
               fieldValue: selectedHistogram.value,
