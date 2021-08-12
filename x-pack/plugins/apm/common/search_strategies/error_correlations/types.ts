@@ -5,6 +5,8 @@
  * 2.0.
  */
 
+import { FAILED_TRANSACTION_CORRELATION_IMPACT } from './constants';
+
 export interface ErrorCorrelationValue {
   key: string;
   doc_count: number;
@@ -25,3 +27,5 @@ export interface BaseSearchStrategyResponse {
   startFetch: () => void;
   cancelFetch: () => void;
 }
+
+export type FailedTransactionCorrelationImpact = typeof FAILED_TRANSACTION_CORRELATION_IMPACT[keyof typeof FAILED_TRANSACTION_CORRELATION_IMPACT]; // typeof JOB_FIELD_TYPES[keyof typeof JOB_FIELD_TYPES];
