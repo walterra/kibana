@@ -5,7 +5,8 @@
  * 2.0.
  */
 
-import React, { useEffect, FC } from 'react';
+import React, { useEffect, useState, FC } from 'react';
+import { isEqual } from 'lodash';
 
 import type { DataView } from '@kbn/data-views-plugin/public';
 import { ProgressControls } from '@kbn/aiops-components';
@@ -51,6 +52,19 @@ export const ExplainLogRateSpikesAnalysis: FC<ExplainLogRateSpikesAnalysisProps>
   const { services } = useAiOpsKibana();
   const basePath = services.http?.basePath.get() ?? '';
 
+  const [currenAnalysisWindowParameters, setCurrentAnalysisWindowParameters] = useState<
+    WindowParameters | undefined
+  >();
+
+  useEffect(() => {
+    if (
+      currenAnalysisWindowParameters !== undefined &&
+      !isEqual(currenAnalysisWindowParameters, windowParameters)
+    ) {
+      console.log('STALE!!');
+    }
+  }, [currenAnalysisWindowParameters, windowParameters]);
+
   const { cancel, start, data, isRunning, error } = useFetchStream<
     ApiExplainLogRateSpikes,
     typeof basePath
@@ -69,6 +83,7 @@ export const ExplainLogRateSpikesAnalysis: FC<ExplainLogRateSpikesAnalysisProps>
   );
 
   useEffect(() => {
+    setCurrentAnalysisWindowParameters(windowParameters);
     start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
