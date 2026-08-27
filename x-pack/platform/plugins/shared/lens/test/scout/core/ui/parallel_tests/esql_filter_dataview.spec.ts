@@ -8,7 +8,11 @@
 import type { ScoutPage } from '@kbn/scout';
 import { KibanaCodeEditorWrapper } from '@kbn/scout';
 import { expect } from '@kbn/scout/ui';
-import { applyLensInlineEditorAndWaitClosed, spaceTest } from '../fixtures';
+import {
+  applyLensInlineEditorAndWaitClosed,
+  clickEsqlRunQueryButton,
+  spaceTest,
+} from '../fixtures';
 
 const INITIAL_ESQL_QUERY = `FROM kibana_sample_data_logs
   | STATS count = COUNT(*) BY \`Over time\` = TBUCKET(50), agent.keyword`;
@@ -20,7 +24,7 @@ async function setEsqlQueryAndRun(page: ScoutPage, query: string) {
   const codeEditor = new KibanaCodeEditorWrapper(page);
   await codeEditor.waitCodeEditorReady('InlineEditingESQLEditor');
   await codeEditor.setCodeEditorValue(query);
-  await page.testSubj.click('ESQLEditor-run-query-button');
+  await clickEsqlRunQueryButton(page);
   await page.locator('.echCanvasRenderer').waitFor({ state: 'visible', timeout: 30_000 });
 }
 

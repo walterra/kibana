@@ -25,6 +25,60 @@ import {
 } from './constants';
 
 export type PlaywrightPage = Parameters<typeof extendPlaywrightPage>[0]['page'];
+
+/**
+ * Clicks the ES|QL run-query button and makes sure a query run was actually
+ * submitted.
+ *
+ * The button is dual-state (`use_query_actions.ts` in `@kbn/esql-editor`):
+ * while a query runs it either turns into an enabled "Cancel" button (with
+ * query cancellation) or keeps the "Search" label with a loading spinner
+ * (without). Clicking during that window *aborts* the in-flight query instead
+ * of submitting. Runs triggered by preceding actions (opening the flyout,
+ * switching the chart type) start asynchronously, so an idle check alone is a
+ * check-then-act race — a run can begin between the check and the click and
+ * silently turn the click into a cancel (observed in CI: editor holds the new
+ * query while the panel keeps the old query's 1000-row result set).
+ *
+ * Submitting flips the button to its busy state synchronously, so: click,
+ * verify the busy state was observed, and re-click when it was not (the click
+ * was consumed as a cancel). A run too fast for the poll to observe leads to a
+ * duplicate submit of the same text, which is idempotent and harmless.
+ */
+export async function clickEsqlRunQueryButton(page: ScoutPage): Promise<void> {
+  const runButton = page.testSubj.locator('ESQLEditor-run-query-button');
+  const isBusy = async (): Promise<boolean> => {
+    const [label, spinners] = await Promise.all([
+      runButton.innerText().catch(() => ''),
+      runButton.locator('.euiLoadingSpinner').count(),
+    ]);
+    return label.includes('Cancel') || spinners > 0;
+  };
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    // Wait for any in-flight run to finish before clicking.
+    await expect.poll(isBusy, { timeout: 30_000 }).toBe(false);
+    await runButton.click();
+
+    // A successful submit turns the button busy in the same render pass.
+    let runStarted = false;
+    try {
+      await expect.poll(isBusy, { timeout: 1_500, intervals: [50, 100, 250] }).toBe(true);
+      runStarted = true;
+    } catch {
+      // Busy state never observed: either the click cancelled an in-flight
+      // run (retry) or the run finished faster than the poll (a retry then
+      // just re-submits the same query).
+    }
+    if (runStarted) {
+      await expect.poll(isBusy, { timeout: 30_000 }).toBe(false);
+      return;
+    }
+  }
+  // Three unobserved runs in a row: most likely three ultra-fast successful
+  // submits; return and let the caller's assertions verify the outcome.
+}
+
 /**
  * Creates an ad hoc (temporary) data view from the Lens data panel switcher.
  * Equivalent to FTR `dataViews.createFromSearchBar({ name, adHoc: true })` in the Lens context.

@@ -8,7 +8,12 @@
 import { KibanaCodeEditorWrapper } from '@kbn/scout';
 import { expect } from '@kbn/scout/ui';
 import type { PageObjects, ScoutPage } from '@kbn/scout';
-import { applyLensInlineEditorAndWaitClosed, spaceTest, testData } from '../fixtures';
+import {
+  applyLensInlineEditorAndWaitClosed,
+  clickEsqlRunQueryButton,
+  spaceTest,
+  testData,
+} from '../fixtures';
 
 const setEsqlQueryAndRun = async (
   dashboard: PageObjects['dashboard'],
@@ -18,9 +23,7 @@ const setEsqlQueryAndRun = async (
 ) => {
   await codeEditor.waitCodeEditorReady('InlineEditingESQLEditor');
   await codeEditor.setCodeEditorValue(query);
-  const searchButton = page.testSubj.locator('ESQLEditor-run-query-button');
-  await expect(searchButton).toBeEnabled();
-  await searchButton.click();
+  await clickEsqlRunQueryButton(page);
   await dashboard.waitForRenderComplete();
 };
 

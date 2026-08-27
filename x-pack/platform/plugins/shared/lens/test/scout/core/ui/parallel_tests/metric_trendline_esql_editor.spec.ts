@@ -9,6 +9,7 @@ import { KibanaCodeEditorWrapper } from '@kbn/scout';
 import { expect } from '@kbn/scout/ui';
 import {
   applyLensInlineEditorAndWaitClosed,
+  clickEsqlRunQueryButton,
   openDimensionEditorAndWaitForFlyout,
   openInlineEditorAndWaitVisible,
   spaceTest,
@@ -144,7 +145,7 @@ spaceTest.describe(
               'FROM logstash-* | WHERE @timestamp >= ?_tstart AND @timestamp < ?_tend | STATS max_bytes = MAX(bytes)'
             );
 
-            await page.getByTestId('ESQLEditor-run-query-button').click();
+            await clickEsqlRunQueryButton(page);
 
             // Wait for the trendline to re-render with the new data
             await expect(page.locator('.echSingleMetricSparkline')).toBeVisible({ timeout: 30000 });
