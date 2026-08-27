@@ -48,23 +48,40 @@ export type PlaywrightPage = Parameters<typeof extendPlaywrightPage>[0]['page'];
  */
 export async function clickEsqlRunQueryButton(page: ScoutPage): Promise<void> {
   const runButton = page.testSubj.locator('ESQLEditor-run-query-button');
-  const isBusy = async (): Promise<boolean> => {
+
+  // The Lens flyout renders the ES|QL editor through a portal whose container
+  // is re-created on suggestion updates (e.g. after a chart-type switch), so
+  // the editor subtree — run button included — is transiently unmounted and
+  // remounted. Read the button state via `count()` (no auto-wait) so a
+  // mid-remount gap reports 'absent' instead of stalling for the action
+  // timeout and then masquerading as "idle".
+  const getState = async (): Promise<'absent' | 'busy' | 'idle'> => {
+    if ((await runButton.count()) === 0) {
+      return 'absent';
+    }
     const [label, spinners] = await Promise.all([
       runButton.innerText().catch(() => ''),
       runButton.locator('.euiLoadingSpinner').count(),
     ]);
-    return label.includes('Cancel') || spinners > 0;
+    return label.includes('Cancel') || spinners > 0 ? 'busy' : 'idle';
   };
 
   for (let attempt = 0; attempt < 3; attempt++) {
-    // Wait for any in-flight run to finish before clicking.
-    await expect.poll(isBusy, { timeout: 30_000 }).toBe(false);
-    await runButton.click();
+    // Wait until the button is mounted and no run is in flight. Tolerates the
+    // remount flaps ('absent') and waits out background runs ('busy').
+    await expect.poll(getState, { timeout: 30_000 }).toBe('idle');
+    try {
+      await runButton.click({ timeout: 5_000 });
+    } catch {
+      // The button unmounted between the state check and the click (portal
+      // remount) — re-resolve and try again.
+      continue;
+    }
 
     // A successful submit turns the button busy in the same render pass.
     let runStarted = false;
     try {
-      await expect.poll(isBusy, { timeout: 1_500, intervals: [50, 100, 250] }).toBe(true);
+      await expect.poll(getState, { timeout: 1_500, intervals: [50, 100, 250] }).toBe('busy');
       runStarted = true;
     } catch {
       // Busy state never observed: either the click cancelled an in-flight
@@ -72,7 +89,7 @@ export async function clickEsqlRunQueryButton(page: ScoutPage): Promise<void> {
       // just re-submits the same query).
     }
     if (runStarted) {
-      await expect.poll(isBusy, { timeout: 30_000 }).toBe(false);
+      await expect.poll(getState, { timeout: 30_000 }).not.toBe('busy');
       return;
     }
   }
