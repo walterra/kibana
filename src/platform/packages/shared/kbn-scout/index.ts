@@ -38,7 +38,7 @@ export {
 export { mergeTests, test as playwrightTest } from 'playwright/test';
 
 // Performance monitoring
-export { measurePerformance, measurePerformanceAsync } from './src/common';
+export { measurePerformance, measurePerformanceAsync, ScoutLogger } from './src/common';
 
 // EUI components
 export * from './src/playwright/eui_components';
@@ -92,7 +92,6 @@ export type {
   EsClient,
   KbnClient,
   KibanaUrl,
-  ScoutLogger,
   ScoutServerConfig,
   ScoutTestConfig,
   ServerlessProductTier,

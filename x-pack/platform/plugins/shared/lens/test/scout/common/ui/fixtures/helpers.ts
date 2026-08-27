@@ -9,6 +9,7 @@ import type { DebugState } from '@elastic/charts';
 import {
   extendPlaywrightPage,
   KibanaCodeEditorWrapper,
+  ScoutLogger,
   QueryBar,
   ContentListWrapper,
   type KibanaUrl,
@@ -75,8 +76,11 @@ export async function clickEsqlRunQueryButton(page: ScoutPage): Promise<void> {
       return;
     }
   }
-  // Three unobserved runs in a row: most likely three ultra-fast successful
+  // Three unobserved runs in a row: most likely three fast successful
   // submits; return and let the caller's assertions verify the outcome.
+  new ScoutLogger('lens:helpers').debug(
+    'clickEsqlRunQueryButton: busy state never observed after 3 clicks; assuming fast query runs'
+  );
 }
 
 /**
