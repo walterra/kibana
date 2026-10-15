@@ -47,6 +47,7 @@ import {
 } from '../../coloring';
 import { DEFAULT_LINE_CATEGORICAL_COLOR_MAPPING, DEFAULT_REFERENCE_LINE_AXIS } from './defaults';
 import { getValueApiColumn } from '../../columns/esql_column';
+import { fromFormatLensStateToAPI } from '../../columns/format';
 import { toApiFilterLanguage } from '../../columns/filter';
 import {
   isAPIColumnOfBucketType,
@@ -330,6 +331,9 @@ function convertReferenceLineLayerToAPI(
           operation: 'static_value',
           value: Number(column.params?.value),
           ...(column.customLabel ? { label: column.label } : {}),
+          ...(column.params?.format
+            ? { format: fromFormatLensStateToAPI(column.params.format) }
+            : {}),
           ...decorationConfig,
         };
       }
