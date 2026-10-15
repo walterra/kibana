@@ -17,7 +17,7 @@ Graph shows only up in the side bar if your server is running on a platinum or t
 
 ### Client `public/`
 
-State is currently handled by React, Redux Toolkit listener middleware, and the mutable `GraphWorkspace` instance, which manages node and edge state. The remaining workspace state should eventually be integrated into the Redux store.
+Redux owns normalized workspace snapshots, selection, topology edits, blocklists, node presentation, and bounded undo/redo history. Redux Toolkit listeners project edits into the existing mutable workspace; legacy selection arrays and flags are projections for its consumers, not a second source of truth. Current node coordinates are captured before topology/history mutations and response merges, rather than on simulation ticks. The existing workspace still owns request processing and D3 layout, and React retains its existing render mechanism.
 
 * `apps/` contains all graph app routes
 * `components/` contains react components for various parts of the interface. Components can hold local UI state (e.g. current form data), everything else should be passed in from the caller. Styles should reside in a component-specific stylesheet

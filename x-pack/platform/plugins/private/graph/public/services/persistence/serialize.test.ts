@@ -66,6 +66,10 @@ describe('serialize', () => {
       ],
       workspace: {
         isInitialized: true,
+        selectedNodeIds: [],
+        selectedEdgeIds: [],
+        undoHistory: [],
+        redoHistory: [],
         nodesById: {
           'node-0': {
             id: 'node-0',
