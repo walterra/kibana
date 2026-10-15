@@ -5,7 +5,24 @@
  * 2.0.
  */
 
-import { createWorkspaceState } from '../../state_management/workspace';
+import {
+  clearNodeSelection,
+  createWorkspaceState,
+  deleteSelectedNodes,
+  deselectNode,
+  groupSelectedNodes,
+  invertNodeSelection,
+  redoWorkspace,
+  selectAllNodes,
+  selectNeighborNodes,
+  toggleNodeSelection,
+  undoWorkspace,
+  workspaceGraphMergeStarted,
+  workspaceGraphMerged,
+  workspaceRuntimeChanged,
+} from '../../state_management/workspace';
+import { createMockGraphStore } from '../../state_management/mocks';
+import { createGraphStore } from '../../state_management/store';
 import { createWorkspace } from './graph_client_workspace';
 
 describe('graphui-workspace', function () {
@@ -13,12 +30,18 @@ describe('graphui-workspace', function () {
     // var fooResource=null;
     let mockedResult = null;
     let init = null;
+    const workspaces = [];
+    afterEach(() => {
+      workspaces.forEach((workspace) => workspace.stopLayout());
+      workspaces.length = 0;
+    });
     beforeEach(function () {
       //Setup logic here
       // fooResource={"foo":"bar"};
       init = function () {
         const changeHandler = jest.fn();
         const topologyChangeHandler = jest.fn();
+        const graphMergeStarted = jest.fn();
         const callNodeProxy = function (indexName, query, responseHandler) {
           responseHandler(mockedResult);
         };
@@ -34,6 +57,7 @@ describe('graphui-workspace', function () {
           ],
           changeHandler,
           topologyChangeHandler,
+          graphMergeStarted,
           graphExploreProxy: callNodeProxy,
           exploreControls: {
             useSignificance: false,
@@ -45,8 +69,20 @@ describe('graphui-workspace', function () {
           },
         };
         const workspace = createWorkspace(options);
+        workspaces.push(workspace);
+        const { mockedDeps } = createMockGraphStore({});
+        mockedDeps.getWorkspace.mockReturnValue(workspace);
+        const store = createGraphStore(mockedDeps);
+        mockedDeps.notifyReact.mockImplementation(() =>
+          store.dispatch(workspaceRuntimeChanged(createWorkspaceState(workspace)))
+        );
+        topologyChangeHandler.mockImplementation(() =>
+          store.dispatch(workspaceGraphMerged(createWorkspaceState(workspace)))
+        );
+        graphMergeStarted.mockImplementation(() => store.dispatch(workspaceGraphMergeStarted()));
         return {
           workspace,
+          store,
           changeHandler,
           topologyChangeHandler,
           //, get to(){}
@@ -202,7 +238,7 @@ describe('graphui-workspace', function () {
 
     it('selectionTest', function () {
       //Test selections on a graph
-      const { workspace } = init();
+      const { workspace, store } = init();
       // graph is a1->a2 and b1->b2
       mockedResult = {
         vertices: [
@@ -260,30 +296,30 @@ describe('graphui-workspace', function () {
       expect(typeof nodeB2).toEqual('object');
 
       expect(workspace.selectedNodes.length).toEqual(0);
-      workspace.selectNode(nodeA1);
+      store.dispatch(toggleNodeSelection({ nodeId: nodeA1.id, replace: false }));
       expect(workspace.selectedNodes.length).toEqual(1);
-      workspace.selectInvert();
+      store.dispatch(invertNodeSelection());
       expect(workspace.selectedNodes.length).toEqual(3);
-      workspace.selectInvert();
+      store.dispatch(invertNodeSelection());
       expect(workspace.selectedNodes.length).toEqual(1);
-      workspace.deselectNode(nodeA1);
+      store.dispatch(deselectNode(nodeA1.id));
       expect(workspace.selectedNodes.length).toEqual(0);
-      workspace.selectAll();
+      store.dispatch(selectAllNodes());
       expect(workspace.selectedNodes.length).toEqual(4);
-      workspace.selectInvert();
+      store.dispatch(invertNodeSelection());
       expect(workspace.selectedNodes.length).toEqual(0);
 
-      workspace.selectNode(nodeA1);
+      store.dispatch(toggleNodeSelection({ nodeId: nodeA1.id, replace: false }));
       expect(workspace.selectedNodes.length).toEqual(1);
-      workspace.selectNeighbours();
+      store.dispatch(selectNeighborNodes());
       expect(workspace.selectedNodes.length).toEqual(2);
-      workspace.selectNeighbours();
+      store.dispatch(selectNeighborNodes());
       //Should have reached full extent of a1-a2 island.
       expect(workspace.selectedNodes.length).toEqual(2);
     });
 
     it('undoRedoDeletes', function () {
-      const { workspace } = init();
+      const { workspace, store } = init();
       // graph is a1->a2
       mockedResult = {
         vertices: [
@@ -318,28 +354,28 @@ describe('graphui-workspace', function () {
       const nodeA2 = workspace.getNode(workspace.makeNodeId('field1', 'a2'));
       expect(typeof nodeA2).toEqual('object');
 
-      workspace.selectNode(nodeA1);
-      workspace.deleteSelection();
+      store.dispatch(toggleNodeSelection({ nodeId: nodeA1.id, replace: false }));
+      store.dispatch(deleteSelectedNodes());
       expect(workspace.nodes.length).toEqual(1);
       nodeA1 = workspace.getNode(workspace.makeNodeId('field1', 'a1'));
       expect(nodeA1).toBe(undefined);
 
-      workspace.undo();
+      store.dispatch(undoWorkspace());
       expect(workspace.nodes.length).toEqual(2);
       nodeA1 = workspace.getNode(workspace.makeNodeId('field1', 'a1'));
       expect(typeof nodeA1).toEqual('object');
 
-      workspace.redo();
+      store.dispatch(redoWorkspace());
       expect(workspace.nodes.length).toEqual(1);
       nodeA1 = workspace.getNode(workspace.makeNodeId('field1', 'a1'));
       expect(nodeA1).toBe(undefined);
 
-      workspace.undo();
+      store.dispatch(undoWorkspace());
       expect(workspace.nodes.length).toEqual(2);
     });
 
     it('undoRedoGroupings', function () {
-      const { workspace } = init();
+      const { workspace, store } = init();
       // graph is a1->a2
       mockedResult = {
         vertices: [
@@ -369,32 +405,33 @@ describe('graphui-workspace', function () {
 
       expect(workspace.nodes.length).toEqual(2);
 
-      const nodeA1 = workspace.getNode(workspace.makeNodeId('field1', 'a1'));
+      let nodeA1 = workspace.getNode(workspace.makeNodeId('field1', 'a1'));
       expect(typeof nodeA1).toEqual('object');
       const nodeA2 = workspace.getNode(workspace.makeNodeId('field1', 'a2'));
       expect(typeof nodeA2).toEqual('object');
 
-      workspace.selectNode(nodeA2);
-      workspace.mergeSelections(nodeA1);
+      store.dispatch(toggleNodeSelection({ nodeId: nodeA2.id, replace: false }));
+      store.dispatch(groupSelectedNodes(nodeA1.id));
 
       let groupedItems = workspace.returnUnpackedGroupeds([nodeA1]);
       expect(groupedItems.length).toEqual(2);
-      workspace.undo();
+      store.dispatch(undoWorkspace());
       groupedItems = workspace.returnUnpackedGroupeds([nodeA1]);
       expect(groupedItems.length).toEqual(1);
-      workspace.redo();
+      store.dispatch(redoWorkspace());
       groupedItems = workspace.returnUnpackedGroupeds([nodeA1]);
       expect(groupedItems.length).toEqual(2);
 
       //Grouped deletes delete all grouped items
-      workspace.selectNone();
-      workspace.selectNode(nodeA1);
-      workspace.deleteSelection();
+      store.dispatch(clearNodeSelection());
+      store.dispatch(toggleNodeSelection({ nodeId: nodeA1.id, replace: false }));
+      store.dispatch(deleteSelectedNodes());
       expect(workspace.nodes.length).toEqual(0);
       expect(workspace.selectedNodes.length).toEqual(0);
 
-      workspace.undo();
+      store.dispatch(undoWorkspace());
       expect(workspace.nodes.length).toEqual(2);
+      nodeA1 = workspace.getNode(workspace.makeNodeId('field1', 'a1'));
       groupedItems = workspace.returnUnpackedGroupeds([nodeA1]);
       expect(groupedItems.length).toEqual(2);
     });

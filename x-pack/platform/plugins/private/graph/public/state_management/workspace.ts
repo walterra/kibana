@@ -263,15 +263,18 @@ export const workspaceReducer = reducerWithInitialState(initialWorkspaceState)
       },
     };
   })
-  .case(colorSelectedNodes, (state, color) => ({
-    ...state,
-    nodesById: Object.fromEntries(
-      Object.entries(state.nodesById).map(([nodeId, node]) => [
-        nodeId,
-        state.selectedNodeIds.includes(nodeId) ? { ...node, color } : node,
-      ])
-    ),
-  }))
+  .case(colorSelectedNodes, (state, color) => {
+    const selectedNodeIds = new Set(getSelectedNodeIds(state, false));
+    return {
+      ...state,
+      nodesById: Object.fromEntries(
+        Object.entries(state.nodesById).map(([nodeId, node]) => [
+          nodeId,
+          selectedNodeIds.has(nodeId) ? { ...node, color } : node,
+        ])
+      ),
+    };
+  })
   .build();
 
 export const workspaceSelector = (state: GraphState) => state.workspace;
@@ -546,7 +549,7 @@ export const registerWorkspaceListeners = (
           node.label = action.payload.label;
         }
       } else if (colorSelectedNodes.match(action)) {
-        listenerApi.getState().workspace.selectedNodeIds.forEach((id) => {
+        getSelectedNodeIds(listenerApi.getState().workspace, false).forEach((id) => {
           const node = workspace.nodesMap[id];
           if (node) node.color = action.payload;
         });

@@ -12,6 +12,7 @@ import { createMockGraphStore } from './mocks';
 import { createGraphStore, type GraphStore } from './store';
 import {
   blocklistSelectedNodes,
+  clearNodeSelection,
   colorSelectedNodes,
   createWorkspaceState,
   deleteSelectedNodes,
@@ -34,7 +35,6 @@ import {
 
 const createEnvironment = () => {
   const workspace = createWorkspace({
-    useReduxHistory: true,
     graphMergeStarted: () => store.dispatch(workspaceGraphMergeStarted()),
     topologyChangeHandler: () =>
       store.dispatch(workspaceGraphMerged(createWorkspaceState(workspace))),
@@ -81,9 +81,6 @@ describe('Redux-owned workspace editing', () => {
 
   it('applies edits and undo/redo from Redux without using legacy topology or history methods', () => {
     const { store, workspace } = setup();
-    const deleteSelection = jest.spyOn(workspace, 'deleteSelection');
-    const undo = jest.spyOn(workspace, 'undo');
-    const redo = jest.spyOn(workspace, 'redo');
     store.dispatch(toggleNodeSelection({ nodeId: 'field..first', replace: true }));
     store.dispatch(toggleEdgeSelection(store.getState().workspace.edgeIds[0]));
     const originalIcon = workspace.nodes[0].icon;
@@ -111,11 +108,9 @@ describe('Redux-owned workspace editing', () => {
     expect(workspace.edges[0]).toMatchObject({ weight: 5, width: 3, doc_count: 7 });
     store.dispatch(redoWorkspace());
     expect(workspace.nodesMap['field..second'].x).toBe(50);
-    expect(deleteSelection).not.toHaveBeenCalled();
-    expect(undo).not.toHaveBeenCalled();
-    expect(redo).not.toHaveBeenCalled();
-    expect(workspace.undoLog).toHaveLength(0);
-    expect(workspace.redoLog).toHaveLength(0);
+    for (const property of ['deleteSelection', 'undo', 'redo', 'undoLog', 'redoLog']) {
+      expect(workspace).not.toHaveProperty(property);
+    }
     expect(JSON.parse(JSON.stringify(store.getState().workspace))).toEqual(
       store.getState().workspace
     );
@@ -136,6 +131,20 @@ describe('Redux-owned workspace editing', () => {
     expect(workspace.nodesMap['field..second'].parent?.id).toBe('field..first');
     store.dispatch(undoWorkspace());
     expect(workspace.nodesMap['field..second'].parent).toBeUndefined();
+  });
+
+  it('preserves grouped styling for descendants without styling unselected nodes', () => {
+    const { store, workspace } = setup();
+    store.dispatch(toggleNodeSelection({ nodeId: 'field..second', replace: true }));
+    store.dispatch(groupSelectedNodes('field..third'));
+    store.dispatch(colorSelectedNodes('green'));
+    expect(workspace.nodesMap['field..second'].color).toBe('green');
+    expect(workspace.nodesMap['field..third'].color).toBe('green');
+    expect(store.getState().workspace.nodesById['field..second'].color).toBe('green');
+    expect(workspace.nodesMap['field..first'].color).toBe('blue');
+    store.dispatch(clearNodeSelection());
+    store.dispatch(colorSelectedNodes('red'));
+    expect(workspace.nodesMap['field..third'].color).toBe('green');
   });
 
   it('updates grouped edge endpoints in Redux without relying on layout', () => {

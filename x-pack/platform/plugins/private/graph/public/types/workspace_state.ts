@@ -88,25 +88,13 @@ export interface Workspace {
   selectedNodes: WorkspaceNode[];
   edges: WorkspaceEdge[];
   blocklistedNodes: BlockListedNode[];
-  undoLog: string;
-  redoLog: string;
   force: ReturnType<typeof d3.layout.force>;
   lastRequest: string;
   lastResponse: string;
 
-  undo: () => void;
-  redo: () => void;
   expandSelecteds: (targetOptions: TargetOptions) => {};
-  deleteSelection: () => void;
-  blocklistSelection: () => void;
-  selectAll: () => void;
   selectNone: () => void;
-  selectInvert: () => void;
-  selectNeighbours: () => void;
   deselectNode: (node: WorkspaceNode) => void;
-  colorSelected: (color: string) => void;
-  groupSelections: (node: WorkspaceNode | undefined) => void;
-  ungroup: (node: WorkspaceNode | undefined) => void;
   callElasticsearch: (request: any) => void;
   search: (qeury: any, fieldsChoice: WorkspaceField[] | undefined, numHops: number) => void;
   simpleSearch: (
@@ -119,11 +107,7 @@ export interface Workspace {
     nodes: WorkspaceNode[]
   ) => void;
   toggleNodeSelection: (node: WorkspaceNode) => boolean;
-  mergeIds: (term1: string, term2: string) => void;
   changeHandler: () => void;
-  unblockNode: (node: BlockListedNode) => void;
-  unblockAll: () => void;
-  clearGraph: () => void;
 
   getQuery(startNodes?: WorkspaceNode[], loose?: boolean): JsonObject;
   getSelectedOrAllNodes(): WorkspaceNode[];
@@ -170,7 +154,6 @@ export type WorkspaceOptions = Partial<{
   changeHandler: () => void;
   topologyChangeHandler: () => void;
   graphMergeStarted: () => void;
-  useReduxHistory: boolean;
   graphExploreProxy: (
     indexPattern: string,
     request: ExploreRequest,
